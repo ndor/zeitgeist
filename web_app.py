@@ -7,8 +7,8 @@ import streamlit as st
 
 st.set_page_config(layout='wide')
 
-BASE_URL = 'http://127.0.0.1:8000'
-
+# BASE_URL = 'http://127.0.0.1:8000'
+BASE_URL = 'https://me-west1-zeitgeist-447717.cloudfunctions.net/function-1'
 
 def get_scores(url: str):
     return requests.get(f'{BASE_URL}/process/?url={url}')#, json={'url': url})
