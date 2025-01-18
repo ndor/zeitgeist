@@ -3,6 +3,7 @@ import requests
 import numpy as np
 import pandas as pd
 import streamlit as st
+import yt_dlp
 
 
 st.set_page_config(layout='wide')
@@ -10,9 +11,18 @@ st.set_page_config(layout='wide')
 # BASE_URL = 'http://127.0.0.1:8000'
 BASE_URL = 'https://me-west1-zeitgeist-447717.cloudfunctions.net/function-1'
 
-def get_scores(url: str):
+
+# def get_scores(url: str):
+#     # return requests.get(f'{BASE_URL}/process/?url={url}')#, json={'url': url})
+#     # return requests.get(f'{BASE_URL}/?url={url}')#, json={'url': url})
+#     return requests.post(BASE_URL, json={'url': url})
+
+def get_scores(file_path: str):
+    # return requests.get(f'{BASE_URL}/process/?url={url}')#, json={'url': url})
     # return requests.get(f'{BASE_URL}/?url={url}')#, json={'url': url})
-    return requests.post(BASE_URL, json={'url': url})
+    # return requests.post(BASE_URL, json={'url': url})
+    with open(file_path, 'rb') as file:
+        return requests.post(f'{BASE_URL}/process/', files={'file': file})
 
 def is_youtube_url(url):
     youtube_regex = (
@@ -20,6 +30,22 @@ def is_youtube_url(url):
         '(youtube|youtu|youtube-nocookie)\.(com|be)/'
         '(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})')
     return re.match(youtube_regex, url) is not None
+
+def download_youtube_video(video_url: str, res=360, target_dir='', tmp_file=True, skip_existing=False) -> dict:
+    youtube_dl_options = {
+        "format": f"mp4[height={res}]",  # This will select the specific resolution typed here
+        "outtmpl": f"{target_dir}tmp.%(ext)s" if tmp_file else f"{target_dir}%(title)s-%(id)s.%(ext)s",
+        # "restrictfilenames": True,
+        "nooverwrites": skip_existing,
+        # "writedescription": True,
+        # "writeinfojson": True,
+        # "writeannotations": True,
+        # "writethumbnail": True,
+        # "writesubtitles": True,
+        # "writeautomaticsub": True
+    }
+    with yt_dlp.YoutubeDL(youtube_dl_options) as ydl:
+        ydl.download(video_url)
 
 def scores_to_dfs(scores: dict) -> (pd.DataFrame, pd.DataFrame):
     audio_df = []
@@ -48,6 +74,9 @@ def scores_to_dfs(scores: dict) -> (pd.DataFrame, pd.DataFrame):
                 .sort_values(by='confidence', ascending=False))
     return visual_df, audio_df
 
+
+
+
 def app():
     def clear_url(key='youtube_url_input'):
         st.session_state[key] = ''
@@ -66,8 +95,17 @@ def app():
         c1, c2 = st.columns(2, gap="small", vertical_alignment="top", border=False)
         with c1:
             if st.button('Process', disabled=not is_youtube_url(youtube_url), key='process_button'):
-                with st.spinner('Please wait...'):
-                    response = get_scores(youtube_url)
+                if '/shorts/' in youtube_url:
+                    st.error(
+                        f'Error: "Shorts" video format not supported. Please choose a non-"Sorts" video.')
+                else:
+                    try:
+                        with st.spinner('Downloading video. Please wait...'):
+                            download_youtube_video(youtube_url)
+                        with st.spinner('Processing video. Please wait...'):
+                            response = get_scores('tmp.mp4')
+                    except yt_dlp.utils.DownloadError:
+                        st.error(f'Error: Video format not supported (is it a "Shorts" video?). Please choose a different video.')
         with c2:
             st.button('Clear', key='clear_button', on_click=clear_url,
                       disabled=len(st.session_state['youtube_url_input']) == 0)#, disabled=not is_youtube_url(youtube_url))
@@ -98,15 +136,15 @@ def app():
             st.divider()
 
             with st.expander('Frames Breakdown'):
-                # for im, frames_score in zip(scores['key_frames'], scores['frames_score']):
-                for frames_score in scores['frames_score']:
+                for im, frames_score in zip(scores['key_frames'], scores['frames_score']):
+                # for frames_score in scores['frames_score']:
                     df = frames_score['df']
                     if len(df) == 0:
                         st.success('neutral')
                     else:
                         st.error('detected categories')
                         st.dataframe(df, use_container_width=True, hide_index=True)
-                    # st.image(np.array(im, dtype='uint8'))
+                    st.image(np.array(im, dtype='uint8'))
 
                     st.divider()
 
@@ -124,12 +162,3 @@ def app():
 
 
 app()
-
-if __name__ == '__main__':
-    # uploaded_file = '/home/ndor/Desktop/pipeline/video_samples/Who are the Palestinian Islamic Jihad militants and what do they want.mp4'
-    # scores = video_pipe.process_video(uploaded_file)
-    # visual_df, audio_df = scores_to_dfs(scores)
-    # print(visual_df)
-    # print('-'*99)
-    # print(audio_df)
-    pass
