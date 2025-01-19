@@ -3,3 +3,4 @@
 # Requests==2.32.3
 # streamlit==1.41.1
 yt_dlp==2025.1.15
+ffmpeg-python
