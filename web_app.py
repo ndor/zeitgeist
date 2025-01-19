@@ -113,6 +113,7 @@ def youtube_block():
     return response, youtube_url
 
 def file_upload_block():
+    st.markdown('Please select, from your computer, a video file that is no more than 4 minutes long, and of average (~360p) resolution.')
     response = None
     uploaded_file = st.file_uploader('Upload a video file', type=['mp4', 'mkv', 'avi'])
     if uploaded_file is not None:
