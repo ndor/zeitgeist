@@ -165,15 +165,15 @@ def app():
             st.divider()
 
             with st.expander('Frames Breakdown'):
-                for im, frames_score in zip(scores['key_frames'], scores['frames_score']):
-                # for frames_score in scores['frames_score']:
+                # for im, frames_score in zip(scores['key_frames'], scores['frames_score']):
+                for frames_score in scores['frames_score']:
                     df = frames_score['df']
                     if len(df) == 0:
                         st.success('neutral')
                     else:
                         st.error('detected categories')
                         st.dataframe(df, use_container_width=True, hide_index=True)
-                    st.image(np.array(im, dtype='uint8'))
+                    # st.image(np.array(im, dtype='uint8'))
 
                     st.divider()
 
