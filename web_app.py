@@ -131,7 +131,7 @@ def app():
 
         method = st.radio(
             'Select video source:',
-            ['**:red[YouTube] URL**', 'Upload a local file'],
+            ['**:red[YouTube] URL**', '**Upload a local file**'],
             captions=['Brows to select a file to process', 'Select a YouTube video URL to process'],
         )
 
